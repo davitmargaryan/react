@@ -8,6 +8,7 @@ import {
 } from "firebase/firestore/lite";
 import IconButton from "@mui/material/IconButton";
 import DeleteIcon from "@mui/icons-material/Delete";
+import EditIcon from '@mui/icons-material/Edit';
 import Table from "@mui/material/Table";
 import TableBody from "@mui/material/TableBody";
 import TableCell from "@mui/material/TableCell";
@@ -18,11 +19,12 @@ import Paper from "@mui/material/Paper";
 import Button from "@mui/material/Button";
 import db from "../firebase/config";
 import { STUDENTS_COL } from "../constants/firebase";
-import AddStudentDialog from "./AddStudent";
+import AddEditStudent from "./AddEditStudent";
 
 const StudentsTable = () => {
   const [students, setStudents] = useState([]);
   const [showAddDialog, setShowAddDialog] = useState(false);
+  const [editingStudent, setEditingStudent] = useState(null);
 
   const getStudents = useCallback(async () => {
     const studentsCol = collection(db, STUDENTS_COL);
@@ -31,7 +33,6 @@ const StudentsTable = () => {
       id: doc.id,
       ...doc.data(),
     }));
-    console.log(studentsList);
     setStudents(studentsList);
   }, []);
 
@@ -42,6 +43,17 @@ const StudentsTable = () => {
     },
     [getStudents]
   );
+
+  const onEditStudenClick = useCallback((student) => {
+    setEditingStudent(student)
+  }, [])
+
+  useEffect(() => {
+    if (editingStudent) {
+      setShowAddDialog(true)
+    }
+  }, [editingStudent])
+
 
   const columns = useMemo(
     () => [
@@ -63,25 +75,37 @@ const StudentsTable = () => {
         cellRenderer: (data, student) => (
           <div>
             <IconButton
+              onClick={() => onEditStudenClick(student)}
+              aria-label="edit"
+            >
+              <EditIcon />
+            </IconButton>
+
+            <IconButton
               onClick={() => onDeleteStudenClick(student.id)}
               aria-label="delete"
             >
               <DeleteIcon />
             </IconButton>
+
+
           </div>
         ),
       },
     ],
-    [onDeleteStudenClick]
+    [onDeleteStudenClick, onEditStudenClick]
   );
 
   useEffect(() => {
     getStudents();
-  }, []);
+  }, [getStudents]);
 
   const onAddBtnClick = () => setShowAddDialog(true);
 
-  const handleCloseAddDialog = () => setShowAddDialog(false);
+  const handleCloseAddDialog = () => {
+    setShowAddDialog(false)
+    setEditingStudent(null)
+  };
 
   const addStudent = async (name, surname, gender) => {
     const studentsRef = collection(db, STUDENTS_COL);
@@ -95,6 +119,19 @@ const StudentsTable = () => {
     setShowAddDialog(false);
     getStudents();
   };
+
+  const editStudent = async (id, name, surname, gender) => {
+
+    await setDoc(doc(db, STUDENTS_COL, id), {
+      name,
+      surname,
+      gender,
+    });
+
+    setEditingStudent(null)
+    setShowAddDialog(false);
+    getStudents();
+  }
 
   return (
     <>
@@ -140,11 +177,13 @@ const StudentsTable = () => {
           </TableBody>
         </Table>
       </TableContainer>
-      <AddStudentDialog
-        onSave={addStudent}
-        open={showAddDialog}
+      {showAddDialog && <AddEditStudent
+        addStudent={addStudent}
+        open
         onClose={handleCloseAddDialog}
-      />
+        editingStudent={editingStudent}
+        editStudent={editStudent}
+      />}
     </>
   );
 };
