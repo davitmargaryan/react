@@ -5,17 +5,21 @@ import TextField from "@mui/material/TextField";
 import Dialog from "@mui/material/Dialog";
 import { Button, DialogActions, MenuItem, Select } from "@mui/material";
 
-const AddStudentDialog = ({ onClose, open, onSave }) => {
-  const [name, setName] = useState("");
-  const [surname, setSurname] = useState("");
-  const [gender, setGender] = useState("male");
+const AddEditStudentDialog = ({ onClose, open, addStudent, editingStudent, editStudent }) => {
+  const [name, setName] = useState(editingStudent?.name || "");
+  const [surname, setSurname] = useState(editingStudent?.surname || "");
+  const [gender, setGender] = useState(editingStudent?.gender || "male");
 
   const onNameChange = (e) => setName(e.target.value);
   const onSurnameChange = (e) => setSurname(e.target.value);
   const onGenderChange = (e) => setGender(e.target.value);
 
   const onSaveClick = () => {
-    onSave(name, surname, gender);
+    if (editingStudent) {
+      editStudent(editingStudent.id, name, surname, gender)
+    } else {
+      addStudent(name, surname, gender);
+    }
   };
 
   return (
@@ -51,10 +55,10 @@ const AddStudentDialog = ({ onClose, open, onSave }) => {
         </div>
       </DialogContent>
       <DialogActions>
-        <Button onClick={onSaveClick}>Save</Button>
+        <Button onClick={onSaveClick}>{editingStudent ? "Edit" : "Add"}</Button>
       </DialogActions>
     </Dialog>
   );
 };
 
-export default AddStudentDialog;
+export default AddEditStudentDialog;
